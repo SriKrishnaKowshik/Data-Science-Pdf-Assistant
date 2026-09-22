@@ -14,7 +14,9 @@ st.set_page_config(
     layout="wide"
 )
 
+
 st.title("📚 Data Science PDF Assistant")
+
 st.write("Chat with the built-in Data Science library or your own uploaded PDFs.")
 
 # --------------------------------------------------

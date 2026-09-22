@@ -89,7 +89,7 @@ Question:
 # -------------------------
 # Generate answer
 # -------------------------
-# Generate answer
+
 response = ollama.chat(
     model="llama3.2:3b",
     messages=[

@@ -1,6 +1,9 @@
 import chromadb
 
 client = chromadb.PersistentClient(path="chroma_db")
-collection = client.get_collection("pdf_collection")
 
-print("Total chunks:", collection.count())
+knowledge = client.get_collection("knowledge_collection")
+user = client.get_collection("user_collection")
+
+print("Knowledge :", knowledge.count())
+print("User      :", user.count())

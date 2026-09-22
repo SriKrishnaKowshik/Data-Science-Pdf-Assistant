@@ -4,32 +4,38 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 
 # -----------------------------
-# Paths
+# Folders
 # -----------------------------
-DATA_FOLDER = "data"
-CHROMA_FOLDER = "chroma_db"
-COLLECTION_NAME = "pdf_collection"
+KNOWLEDGE_FOLDER = "knowledge"
+UPLOAD_FOLDER = "uploads"
 
 # -----------------------------
-# Load embedding model
+# Embedding model
 # -----------------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # -----------------------------
-# Create Chroma database
+# Chroma
 # -----------------------------
-client = chromadb.PersistentClient(path=CHROMA_FOLDER)
+client = chromadb.PersistentClient(path="chroma_db")
 
-# Delete old collection if it exists
-try:
-    client.delete_collection(COLLECTION_NAME)
-except:
-    pass
+# Remove old collections
+for name in ["knowledge_collection", "user_collection"]:
+    try:
+        client.delete_collection(name)
+    except:
+        pass
 
-collection = client.create_collection(
-    name=COLLECTION_NAME,
+knowledge_collection = client.create_collection(
+    name="knowledge_collection",
     metadata={"hnsw:space": "cosine"}
 )
+
+user_collection = client.create_collection(
+    name="user_collection",
+    metadata={"hnsw:space": "cosine"}
+)
+
 
 # -----------------------------
 # Read PDF
@@ -40,64 +46,80 @@ def read_pdf(pdf_path):
 
     for page_number, page in enumerate(reader.pages, start=1):
         text = page.extract_text()
+
         if text:
             pages.append((page_number, text))
 
     return pages
 
+
 # -----------------------------
-# Chunk text
+# Chunking
 # -----------------------------
 def chunk_text(text, chunk_size=250, overlap=40):
+
     words = text.split()
     chunks = []
 
     start = 0
+
     while start < len(words):
+
         end = start + chunk_size
-        chunk = " ".join(words[start:end])
-        chunks.append(chunk)
+
+        chunks.append(" ".join(words[start:end]))
+
         start += chunk_size - overlap
 
     return chunks
 
+
 # -----------------------------
-# Process all PDFs
+# Index one folder
 # -----------------------------
-pdf_files = list(Path(DATA_FOLDER).glob("*.pdf"))
+def index_folder(folder, collection):
 
-if not pdf_files:
-    print("No PDF found inside data folder.")
-    exit()
+    pdfs = list(Path(folder).glob("*.pdf"))
 
-doc_id = 0
+    doc_id = 0
 
-for pdf in pdf_files:
-    print(f"Processing: {pdf.name}")
+    for pdf in pdfs:
 
-    pages = read_pdf(pdf)
+        print(f"Indexing {pdf.name}")
 
-    for page_number, page_text in pages:
+        pages = read_pdf(pdf)
 
-        chunks = chunk_text(page_text)
+        for page_number, page_text in pages:
 
-        for chunk in chunks:
+            chunks = chunk_text(page_text)
 
-            embedding = model.encode(
-                chunk,
-                normalize_embeddings=True
-          ).tolist()
+            for chunk in chunks:
 
-            collection.add(
-                ids=[str(doc_id)],
-                documents=[chunk],
-                embeddings=[embedding],
-                metadatas=[{
-                    "page": page_number,
-                    "source": pdf.name
-                }]
-            )
+                embedding = model.encode(
+                    chunk,
+                    normalize_embeddings=True
+                ).tolist()
 
-            doc_id += 1
+                collection.add(
+                    ids=[f"{pdf.stem}_{doc_id}"],
+                    documents=[chunk],
+                    embeddings=[embedding],
+                    metadatas=[{
+                        "source": pdf.name,
+                        "page": page_number
+                    }]
+                )
 
-print("Finished! Data stored in ChromaDB.")
+                doc_id += 1
+
+
+# -----------------------------
+# Main
+# -----------------------------
+if __name__ == "__main__":
+
+    index_folder(KNOWLEDGE_FOLDER, knowledge_collection)
+    index_folder(UPLOAD_FOLDER, user_collection)
+
+    print("\nKnowledge chunks :", knowledge_collection.count())
+    print("User chunks      :", user_collection.count())

@@ -8,7 +8,7 @@ A **local Retrieval-Augmented Generation (RAG)** application that allows users t
 
 ## 🚀 Features
 
-- 📖 Built-in Data Science knowledge base (ML books, lecture notes)
+- 📖 Built-in Data Science knowledge base (ML books, Data science books, Reports, Lecture notes)
 - 📄 Upload your own PDF and chat with it
 - 🌐 Hybrid search (Knowledge / My PDFs / Both)
 - 🧠 Semantic search using ChromaDB + Sentence Transformers
@@ -16,18 +16,6 @@ A **local Retrieval-Augmented Generation (RAG)** application that allows users t
 - 📑 Page-level source citations
 - 💻 Streamlit web interface
 - 🔒 Fully offline & privacy-friendly
-
----
-
-## 🖼️ Demo
-
-> Add screenshots of your Streamlit UI here after uploading them to GitHub.
-
-| Home | Answer |
-|------|------|
-| `assets/home.png` | `assets/answer.png` |
-
----
 
 ## 🏗️ Architecture
 
@@ -44,7 +32,7 @@ A **local Retrieval-Augmented Generation (RAG)** application that allows users t
           │                               │
           ▼                               ▼
   Knowledge Collection            User Collection
- (Built-in DS PDFs)             (Uploaded PDFs)
+ (Built-in DS/ML PDFs)             (Uploaded PDFs)
           │                               │
           └───────────────┬───────────────┘
                           ▼
@@ -85,9 +73,9 @@ Data_Science_PDF_Assistant/
 ├── check_db.py            # Verify database
 ├── requirements.txt
 │
-├── knowledge/             # Built-in Data Science PDFs
+├── knowledge/             # Sample Built-in Data Science/ML PDFs
 │   ├── ML_Book.pdf
-│   └── ISLP_Book.pdf
+│   └── DS_Book.pdf
 │
 ├── uploads/               # User uploaded PDFs
 │
@@ -202,31 +190,6 @@ Choose **Both** to retrieve information from:
 
 ---
 
-## 📈 Current Capabilities
-
-| Feature | Status |
-|----------|--------|
-| Local RAG | ✅ |
-| Semantic Search | ✅ |
-| ChromaDB | ✅ |
-| PDF Upload | ✅ |
-| Hybrid Retrieval | ✅ |
-| Source Citations | ✅ |
-| Offline LLM | ✅ |
-
----
-
-## 🎯 Future Improvements
-
-- [ ] ChatGPT-style conversation interface
-- [ ] Streaming responses
-- [ ] Clickable source preview
-- [ ] BM25 + Semantic hybrid retrieval
-- [ ] Multiple uploaded PDFs
-- [ ] Conversation memory
-
----
-
 ## 👨‍💻 Author
 
 **Sri Krishna Kowshik**
@@ -237,6 +200,4 @@ M.Sc. Computer Science — Technische Universität Dresden
 
 ---
 
-## ⭐ If you like this project
 
-Consider giving the repository a **Star** ⭐

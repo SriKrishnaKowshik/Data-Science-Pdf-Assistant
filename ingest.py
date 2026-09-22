@@ -3,59 +3,34 @@ from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
 import chromadb
 
-# -----------------------------
+# --------------------------------------------------
 # Folders
-# -----------------------------
+# --------------------------------------------------
 KNOWLEDGE_FOLDER = "knowledge"
-UPLOAD_FOLDER = "uploads"
 
-# -----------------------------
-# Embedding model
-# -----------------------------
+# --------------------------------------------------
+# Embedding Model
+# --------------------------------------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# -----------------------------
-# Chroma
-# -----------------------------
-client = chromadb.PersistentClient(path="chroma_db")
-
-# Remove old collections
-for name in ["knowledge_collection", "user_collection"]:
-    try:
-        client.delete_collection(name)
-    except:
-        pass
-
-knowledge_collection = client.create_collection(
-    name="knowledge_collection",
-    metadata={"hnsw:space": "cosine"}
-)
-
-user_collection = client.create_collection(
-    name="user_collection",
-    metadata={"hnsw:space": "cosine"}
-)
-
-
-# -----------------------------
-# Read PDF
-# -----------------------------
+# --------------------------------------------------
+# PDF Reader
+# --------------------------------------------------
 def read_pdf(pdf_path):
     reader = PdfReader(pdf_path)
     pages = []
 
-    for page_number, page in enumerate(reader.pages, start=1):
+    for page_num, page in enumerate(reader.pages, start=1):
         text = page.extract_text()
 
         if text:
-            pages.append((page_number, text))
+            pages.append((page_num, text))
 
     return pages
 
-
-# -----------------------------
+# --------------------------------------------------
 # Chunking
-# -----------------------------
+# --------------------------------------------------
 def chunk_text(text, chunk_size=250, overlap=40):
 
     words = text.split()
@@ -73,15 +48,40 @@ def chunk_text(text, chunk_size=250, overlap=40):
 
     return chunks
 
+# --------------------------------------------------
+# Create Collections
+# --------------------------------------------------
+def create_collections():
 
-# -----------------------------
-# Index one folder
-# -----------------------------
+    client = chromadb.PersistentClient(path="chroma_db")
+
+    # Delete old collections
+    for name in ["knowledge_collection", "user_collection"]:
+        try:
+            client.delete_collection(name)
+        except:
+            pass
+
+    knowledge = client.create_collection(
+        name="knowledge_collection",
+        metadata={"hnsw:space": "cosine"}
+    )
+
+    user = client.create_collection(
+        name="user_collection",
+        metadata={"hnsw:space": "cosine"}
+    )
+
+    return knowledge, user
+
+# --------------------------------------------------
+# Index Knowledge PDFs
+# --------------------------------------------------
 def index_folder(folder, collection):
 
-    pdfs = list(Path(folder).glob("*.pdf"))
-
     doc_id = 0
+
+    pdfs = list(Path(folder).glob("*.pdf"))
 
     for pdf in pdfs:
 
@@ -89,7 +89,7 @@ def index_folder(folder, collection):
 
         pages = read_pdf(pdf)
 
-        for page_number, page_text in pages:
+        for page_num, page_text in pages:
 
             chunks = chunk_text(page_text)
 
@@ -106,20 +106,68 @@ def index_folder(folder, collection):
                     embeddings=[embedding],
                     metadatas=[{
                         "source": pdf.name,
-                        "page": page_number
+                        "page": page_num
                     }]
                 )
 
                 doc_id += 1
 
+# --------------------------------------------------
+# Index Uploaded PDF (ONLY ONE PDF)
+# --------------------------------------------------
+def ingest_uploaded_pdf(pdf_path):
 
-# -----------------------------
-# Main
-# -----------------------------
+    client = chromadb.PersistentClient(path="chroma_db")
+
+    # Replace previous uploaded PDF
+    try:
+        client.delete_collection("user_collection")
+    except:
+        pass
+
+    collection = client.create_collection(
+        name="user_collection",
+        metadata={"hnsw:space": "cosine"}
+    )
+
+    pages = read_pdf(pdf_path)
+
+    doc_id = 0
+
+    for page_num, page_text in pages:
+
+        chunks = chunk_text(page_text)
+
+        for chunk in chunks:
+
+            embedding = model.encode(
+                chunk,
+                normalize_embeddings=True
+            ).tolist()
+
+            collection.add(
+                ids=[f"user_{doc_id}"],
+                documents=[chunk],
+                embeddings=[embedding],
+                metadatas=[{
+                    "source": Path(pdf_path).name,
+                    "page": page_num
+                }]
+            )
+
+            doc_id += 1
+
+    return collection.count()
+
+# --------------------------------------------------
+# Build Knowledge Database
+# --------------------------------------------------
 if __name__ == "__main__":
 
-    index_folder(KNOWLEDGE_FOLDER, knowledge_collection)
-    index_folder(UPLOAD_FOLDER, user_collection)
+    knowledge_collection, _ = create_collections()
 
-    print("\nKnowledge chunks :", knowledge_collection.count())
-    print("User chunks      :", user_collection.count())
+    index_folder(KNOWLEDGE_FOLDER, knowledge_collection)
+
+    print("\nKnowledge Database Ready!")
+    print(f"Knowledge chunks: {knowledge_collection.count()}")
+    print("User PDFs are indexed only from the Streamlit UI.")

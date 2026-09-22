@@ -90,7 +90,7 @@ Data_Science_PDF_Assistant/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Data-Science-PDF-Assistant.git
+git clone https://github.com/SriKrishnaKowshik/Data-Science-Pdf-Assistant.git
 cd Data-Science-PDF-Assistant
 ```
 

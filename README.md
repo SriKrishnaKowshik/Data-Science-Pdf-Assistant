@@ -189,15 +189,13 @@ Choose **Both** to retrieve information from:
 - Your uploaded PDF
 
 ---
-
 ## 👨‍💻 Author
 
-**Sri Krishna Kowshik**
+**Sri Krishna Kowshik Nalliboina**
 
 M.Sc. Computer Science — Technische Universität Dresden
 
 - Interests: Data Science, Machine Learning, Generative AI
-
 ---
 
 
